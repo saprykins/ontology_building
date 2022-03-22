@@ -1,9 +1,263 @@
+# Official doc arxiv: Request from api
+# used to avoid arxiv overcharge
+import time
+import urllib
+import urllib.request
+
+# Getting key information from xml
+import xml.etree.ElementTree as ET
+
+# Ontology
 from owlready2 import *
 
-ontology_local_link = "owlready_onto_i.owl"
-# ontology_local_link_output = "owlready_onto_o.owl"
+# Text extraction
+# import spacy
+from pdfminer.high_level import extract_text
+
+# 
+# GET INFO ON ARTICLE FROM ARXIV SITE
+# 
+
+def get_article_data(url):
+    # ex of API request
+
+    # url = 'http://export.arxiv.org/api/query?search_query=all:electron&start=0&max_results=2'
+
+    data = urllib.request.urlopen(url)
+    # print(data.read().decode('utf-8'))
+
+    tree = ET.parse(data)
+
+    # putting article data in dictionary
+
+    array_of_articles = []
+    root = tree.getroot()
+    # article_buffer = {}
+    for child in root:
+
+        article_buffer = {}
+        art_authors = []
+        for grand_child in child:
+
+            # finds and updates article's link
+            if grand_child.tag == '{http://www.w3.org/2005/Atom}id':
+                article_link = grand_child.text
+                pdf_link = article_link.replace(
+                    'http://arxiv.org/abs', 'http://arxiv.org/pdf')
+                article_buffer['pdf_link'] = pdf_link
+
+            if grand_child.tag == '{http://www.w3.org/2005/Atom}title':
+                article_buffer['title'] = grand_child.text
+
+            if grand_child.tag == '{http://www.w3.org/2005/Atom}published':
+                article_buffer['published'] = grand_child.text
+
+            if grand_child.tag == '{http://www.w3.org/2005/Atom}summary':
+                article_buffer['summary'] = grand_child.text
+            
+            if grand_child.tag == '{http://arxiv.org/schemas/atom}comment':
+                article_buffer['comment'] = grand_child.text
+            
+            if grand_child.tag == '{http://arxiv.org/schemas/atom}journal_ref':
+                article_buffer['journal_ref'] = grand_child.text
+            
+            # ::2 to avoid printing departments
+            # for grand_grand_child in grand_child[::2]:
+            author_dict = {}
+            for grand_grand_child in grand_child:
+                if grand_grand_child.tag == '{http://www.w3.org/2005/Atom}name':
+                    writer = grand_grand_child.text
+                    author_dict['name'] = writer
+
+                if grand_grand_child.tag == '{http://arxiv.org/schemas/atom}affiliation':
+                    lab_of_writer = grand_grand_child.text
+                    author_dict['lab'] = lab_of_writer
+                
+            # fill in the list of authors (each author is a dictionary with name and lab of the author)
+            if author_dict:
+                art_authors.append(author_dict)
+
+            if article_buffer:
+                article_buffer['authors'] = author_dict
+            
+            if len(art_authors) > 0:
+                article_buffer['authors'] = art_authors
+            
+        # if dictionary is empty
+        if article_buffer:
+            array_of_articles.append(article_buffer)
+    return array_of_articles
+
+
+
+#
+# TRANSFORMS REFERENCES (IN TEXT) FORMAT TO ARRAY OF AUTHORS
+#
+
+def line_of_authors_to_array(line):
+    array_of_authors = []
+    special_character ="&" # splits authors in references
+
+    # if line.find('&'):
+    if special_character in line:
+        # print('1')
+        last_author = line[line.find('&')+2:]
+        line = line[:line.find('&')]
+        array_of_authors.append(last_author.strip())
+
+    while len(line)>3:
+        # if find = -1, it exists
+        if line.find('.,') != -1:
+            # print('2')
+            # print('NOK')
+            author_i = line[:line.find('.,')+1]
+            # print(author_i)
+            array_of_authors.append(author_i.strip())
+            line = line[line.find('.,')+3:]
+
+        else:
+            # print('3')
+            # author_i = line_1
+            array_of_authors.append(line.strip())
+            line = ''
+
+    return array_of_authors
+
+
+
+# 
+# GIVE A LINK WITH ARTICLE, GET REFERENCES IN TEXT
+# 
+
+def get_references_in_text_format_from_link(pdf_url):
+    # name of local file
+    local_file = 'local_copy.pdf'
+
+    # Download remote and save locally
+
+    try:
+        urllib.request.urlretrieve(pdf_url, local_file)
+    except Exception as e:
+        print('Site arxiv does not provide access to pdf files')
+        print(e.__class__, "occurred.")
+        print('Let us try to use local_copy.pdf file')
+        print('If no result below, upload local_copy.pdf file')
+
+    
+    # else:
+        # try:
+            # path_to_pdf = 'local_copy.pdf'
+        # except Exception as e:
+            # print(e.__class__, "occurred.")
+            # print('File local_copy.pdf not found. Please, upload local_copy.pdf file')
+
+
+    finally:
+        # had an error: a bytes-like object is required, not 'str'
+        # so added try
+        try:
+            text = extract_text(local_file)
+            reference_word = 'Reference'
+            # print(text.find(reference_word))
+            # print(text[text.find(reference_word):)
+
+            # get text of all references
+            references = text[text.find(reference_word):]
+            
+            # to exclude the work references itself
+        except Exception:
+            pass
+        
+
+        return references[12:]
+
+
+
+#
+#
+#
+
+def get_array_of_references_from_string_of_references(references_2):
+    array_of_references = []
+
+    max_numer_of_trials_to_read_reference = 30
+    # j number of trials to read the file
+    j = 0
+
+    # if less than 10 characters left, it's not a complete reference
+    while len(references_2)>10:
+        ref_buffer = {}
+        array_ref_authors = []
+
+        ref_authors_end_index = references_2.find('(')
+        
+        ref_authors = references_2[:ref_authors_end_index]
+        
+        # keep text from right to the last new line symbol (\n)
+        # in case line offset
+        if ref_authors.rfind('\n') > 0:
+            ref_authors = ref_authors[ref_authors.rfind('\n')+1:]
+        
+        # if there's no "." in authors field, it's wrong
+        # if not ref_authors.find('.') == -1:
+        #   continue
+
+        array_ref_authors = line_of_authors_to_array(ref_authors)
+
+        #array_ref_authors.append(ref_authors)
+        ref_buffer['authors'] = array_ref_authors
+        # print(ref_authors)
+
+        date_end_index =  references_2.find(')')
+        ref_year = references_2[ref_authors_end_index+1:date_end_index]
+
+        # check line quality
+        # and exit cycle if bad
+        # used to verify if data is in 19** format
+        date_format = '(^[1][9][0-9][0-9]$)'
+        match = re.search(date_format, ref_year)
+        # boolean = bool(match)
+        if (not bool(match)) and (j<max_numer_of_trials_to_read_reference):
+            references_2 = references_2[date_end_index+1:]
+            j += 1
+            # break
+            continue
+
+        ref_buffer['year'] = ref_year
+        references_2 = references_2[date_end_index:]
+
+        ref_title_start = references_2.find('.')
+        # references_2[ref_title_end:]
+        ref_title_end = references_2.find('.', references_2.find('.') + 1)
+        ref_title = references_2[ref_title_start+2:ref_title_end].replace('\n', '')
+        # print(ref_title)
+        ref_buffer['title'] = ref_title
+        references_2 = references_2[ref_title_end+2:]
+
+        # ref_source = references_2[:references_2.find(',')].rstrip('\n')
+        ref_source = references_2[:references_2.find(',')].replace('\n', '')
+        '''
+        if ref_source.find('(cid:12)'):
+        ref_source.replace('(cid:12)', 'fi')
+        '''
+        references_2 = references_2[references_2.find('.')+3:]
+        # print(ref_source)
+        ref_buffer['ref_source'] = ref_source
+
+        # if no "." there's no author, don't keep the whole line
+        # if (ref_buffer) and ref_buffer['authors'] and (not ref_buffer['authors'][0].find('.') == -1):
+        if (ref_buffer) and ref_buffer['authors'] and (not ref_buffer['authors'][0].find('.') == -1) and bool(re.search(date_format, ref_year)):
+            array_of_references.append(ref_buffer)
+    return array_of_references
+
+
+
+#
+# CREATES ONTO
+#
 
 def create_onto_from_one_article(article, array_of_references):
+    ontology_local_link = 'onto_output.owl'
     onto = get_ontology("http://test.org/onto.owl")
     with onto:    
         class Authors(Thing):
@@ -57,36 +311,71 @@ def create_onto_from_one_article(article, array_of_references):
     for author in authors:
 
         author_i = Authors(author['name'].replace(' ', '_'))
-        lab_i = Institutions(author['lab'].replace(' ', '_'))
-        # print(lab_i)
-        author_i.wrote_article.append(article_i)
-        author_i.works_in.append(lab_i)
-        author_i.published_in.append(journal_i)
-        author_i.wrote_article.append(article_i)
-
+        try:
+            lab_i = Institutions(author['lab'].replace(' ', '_'))
+            # print(lab_i)
+            author_i.wrote_article.append(article_i)
+            author_i.works_in.append(lab_i)
+            author_i.published_in.append(journal_i)
+            author_i.wrote_article.append(article_i)
+        except Exception:
+            pass
+        
     onto.save(file = ontology_local_link)
+
+
+
+#
+# MAIN
+#
+
+def main():
+    # request to arxiv
+    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=3'
+    array_of_articles = get_article_data(url) # request to arxiv
+
+    # onto file name
+    # ontology_local_link = "owlready_onto_i.owl"
+
+    # show list of dict of found articles
+    '''
+    for i in range(len(array_of_articles)):
+        print(array_of_articles[i])
+    '''
+
+    # CYCLE THROUGH articles
+    # we can extract much more from array of articles
+    i = 0
+    for article in array_of_articles:
+        
+        pdf_url = article['pdf_link']
+        text = get_references_in_text_format_from_link(pdf_url)
+        array_of_references = get_array_of_references_from_string_of_references(text)
+        # print(article)
+        create_onto_from_one_article(article, array_of_references)
+        i += 1
+        print(i)
+        # time.sleep(10)
     
+    '''
+    for article in array_of_articles:
+        try:
+            # go through articles and get its links
+            # CREATE FNC THAT PUT ALL IN ONTO! 
+            pdf_url = article['pdf_link']
+            # extract text, specifically references in form of text
+            text = get_references_in_text_format_from_link(pdf_url)
+            array_of_references = get_array_of_references_from_string_of_references(text)
+
+            for i in range(len(array_of_references)):
+                print(array_of_references[i])
+            
+        except Exception as e:
+            print(e.__class__, "occurred.")
+    '''
 
 
 
 
-
-
-# article = {'pdf_link': 'http://arxiv.org/pdf/cond-mat/0102536v1', 'authors': [{'name': 'David Prendergast', 'lab': 'Department of Physics'}, {'name': 'M. Nolan', 'lab': 'NMRC, University College, Cork, Ireland'}, {'name': 'Claudia Filippi', 'lab': 'Department of Physics'}, {'name': 'Stephen Fahy', 'lab': 'Department of Physics'}, {'name': 'J. C. Greer', 'lab': 'NMRC, University College, Cork, Ireland'}], 'published': '2001-02-28T20:12:09Z', 'title': 'Impact of Electron-Electron Cusp on Configuration Interaction Energies', 'summary': '  The effect of the electron-electron cusp on the convergence of configuration\ninteraction (CI) wave functions is examined. By analogy with the\npseudopotential approach for electron-ion interactions, an effective\nelectron-electron interaction is developed which closely reproduces the\nscattering of the Coulomb interaction but is smooth and finite at zero\nelectron-electron separation. The exact many-electron wave function for this\nsmooth effective interaction has no cusp at zero electron-electron separation.\nWe perform CI and quantum Monte Carlo calculations for He and Be atoms, both\nwith the Coulomb electron-electron interaction and with the smooth effective\nelectron-electron interaction. We find that convergence of the CI expansion of\nthe wave function for the smooth electron-electron interaction is not\nsignificantly improved compared with that for the divergent Coulomb interaction\nfor energy differences on the order of 1 mHartree. This shows that, contrary to\npopular belief, description of the electron-electron cusp is not a limiting\nfactor, to within chemical accuracy, for CI calculations.\n', 'comment': '11 pages, 6 figures, 3 tables, LaTeX209, submitted to The Journal of\n  Chemical Physics', 'journal_ref': 'J. Chem. Phys. 115, 1626 (2001)'}
-# article_2 = {'pdf_link': 'http://arxiv.org/pdf/cond-mat/0102536v1', 'authors': [{'name': 'David Prendergast 2', 'lab': 'Department of Physics 2'}, {'name': 'M. Nolan 2', 'lab': 'NMRC, University College, Cork, Ireland'}, {'name': 'Claudia Filippi', 'lab': 'Department of Physics'}, {'name': 'Stephen Fahy', 'lab': 'Department of Physics'}, {'name': 'J. C. Greer', 'lab': 'NMRC, University College, Cork, Ireland'}], 'published': '2001-02-28T20:12:09Z', 'title': 'Impact of Electron-Electron Cusp on Configuration Interaction Energies', 'summary': '  The effect of the electron-electron cusp on the convergence of configuration\ninteraction (CI) wave functions is examined. By analogy with the\npseudopotential approach for electron-ion interactions, an effective\nelectron-electron interaction is developed which closely reproduces the\nscattering of the Coulomb interaction but is smooth and finite at zero\nelectron-electron separation. The exact many-electron wave function for this\nsmooth effective interaction has no cusp at zero electron-electron separation.\nWe perform CI and quantum Monte Carlo calculations for He and Be atoms, both\nwith the Coulomb electron-electron interaction and with the smooth effective\nelectron-electron interaction. We find that convergence of the CI expansion of\nthe wave function for the smooth electron-electron interaction is not\nsignificantly improved compared with that for the divergent Coulomb interaction\nfor energy differences on the order of 1 mHartree. This shows that, contrary to\npopular belief, description of the electron-electron cusp is not a limiting\nfactor, to within chemical accuracy, for CI calculations.\n', 'comment': '11 pages, 6 figures, 3 tables, LaTeX209, submitted to The Journal of\n  Chemical Physics', 'journal_ref': 'J. Chem. Phys. 115, 1626 (2001)'}
-
-# array_of_references = [{'authors': ['Bakiri, G.'], 'year': '1991', 'title': 'Converting English text to speech: A machine learning approach', 'ref_source': 'Tech.rep. 91-30-2'},
-# {'authors': ['Cole, R. A.', 'Barnard, E.'], 'year': '1989', 'title': 'A neural-net training program based on conjugate-gradient optimization', 'ref_source': 'Tech. rep.'}]
-
-array_of_articles = [{'pdf_link': 'http://arxiv.org/pdf/cond-mat/0102536v1', 'authors': [{'name': 'David Prendergast', 'lab': 'Department of Physics'}, {'name': 'M. Nolan', 'lab': 'NMRC, University College, Cork, Ireland'}, {'name': 'Claudia Filippi', 'lab': 'Department of Physics'}, {'name': 'Stephen Fahy', 'lab': 'Department of Physics'}, {'name': 'J. C. Greer', 'lab': 'NMRC, University College, Cork, Ireland'}], 'published': '2001-02-28T20:12:09Z', 'title': 'Impact of Electron-Electron Cusp on Configuration Interaction Energies', 'summary': '  The effect of the electron-electron cusp on the convergence of configuration\ninteraction (CI) wave functions is examined. By analogy with the\npseudopotential approach for electron-ion interactions, an effective\nelectron-electron interaction is developed which closely reproduces the\nscattering of the Coulomb interaction but is smooth and finite at zero\nelectron-electron separation. The exact many-electron wave function for this\nsmooth effective interaction has no cusp at zero electron-electron separation.\nWe perform CI and quantum Monte Carlo calculations for He and Be atoms, both\nwith the Coulomb electron-electron interaction and with the smooth effective\nelectron-electron interaction. We find that convergence of the CI expansion of\nthe wave function for the smooth electron-electron interaction is not\nsignificantly improved compared with that for the divergent Coulomb interaction\nfor energy differences on the order of 1 mHartree. This shows that, contrary to\npopular belief, description of the electron-electron cusp is not a limiting\nfactor, to within chemical accuracy, for CI calculations.\n', 'comment': '11 pages, 6 figures, 3 tables, LaTeX209, submitted to The Journal of\n  Chemical Physics', 'journal_ref': 'J. Chem. Phys. 115, 1626 (2001)'},
-{'pdf_link': 'http://arxiv.org/pdf/astro-ph/0608371v1', 'authors': [{'name': 'P. S. Shternin', 'lab': 'Ioffe Physico-Technical Institute'}, {'name': 'D. G. Yakovlev', 'lab': 'Ioffe Physico-Technical Institute'}], 'published': '2006-08-17T14:05:46Z', 'title': 'Electron thermal conductivity owing to collisions between degenerate\n  electrons', 'summary': '  We calculate the thermal conductivity of electrons produced by\nelectron-electron Coulomb scattering in a strongly degenerate electron gas\ntaking into account the Landau damping of transverse plasmons. The Landau\ndamping strongly reduces this conductivity in the domain of ultrarelativistic\nelectrons at temperatures below the electron plasma temperature. In the inner\ncrust of a neutron star at temperatures T < 1e7 K this thermal conductivity\ncompletely dominates over the electron conductivity due to electron-ion\n(electron-phonon) scattering and becomes competitive with the the electron\nconductivity due to scattering of electrons by impurity ions.\n', 'comment': '8 pages, 3 figures', 'journal_ref': 'Phys.Rev. D74 (2006) 043004'}]
-
-array_of_references = [{'authors': ['Bakiri, G.'], 'year': '1991', 'title': 'Converting English text to speech: A machine learning approach', 'ref_source': 'Tech.rep. 91-30-2'},
-{'authors': ['Cole, R. A.', 'Barnard, E.'], 'year': '1989', 'title': 'A neural-net training program based on conjugate-gradient optimization', 'ref_source': 'Tech. rep. CSE 89-014'}]
-
-
-
-for article in array_of_articles:
-    create_onto_from_one_article(article, array_of_references)
-
-# translate_article_to_ontology(article)
+if __name__ == "__main__":
+    main()
