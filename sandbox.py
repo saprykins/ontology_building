@@ -3,7 +3,7 @@ from owlready2 import *
 ontology_local_link = "owlready_onto_i.owl"
 # ontology_local_link_output = "owlready_onto_o.owl"
 
-def create_onto(article):
+def create_onto(article, array_of_references):
     onto = get_ontology("http://test.org/onto.owl")
     with onto:    
         class Authors(Thing):
@@ -18,15 +18,15 @@ def create_onto(article):
         class wrote_article(ObjectProperty):
             domain = [Authors]
             range = [Articles]
-        class referenced(ObjectProperty):
-            domain = [Authors]
-            range = [Articles]
         class works_in(ObjectProperty):
             domain = [Authors]
             range = [Institutions]
         class published_in(ObjectProperty):
             domain = [Authors]
             range = [Journals]
+        class references_article(ObjectProperty):
+            domain = [Articles]
+            range = [Articles]
 
     # get data from article-dictionary
     authors = article['authors']
@@ -37,7 +37,50 @@ def create_onto(article):
     journal_title = article['journal_ref'].replace(' ', '_')
     journal_i = Journals(journal_title)
     
+
+    for reference in array_of_references:
+        # we search for article titles and replace spaces with underscore for better ontology representation
+        # by underscore symbol for ontology representation      
+        reference_title = reference['title']
+        reference_title = reference_title.replace(' ', '_')
+
+        reference_i = Articles(reference_title)
+        article_i.references_article.append(reference_i)
+
+        for author_of_reference in reference['authors']:
+            author_of_reference = author_of_reference.replace(' ', '_')
+            # replace space by _ for otology representation
+            # print(author_text)
+            author_i = Authors(author_of_reference)
+            author_i.wrote_article.append(article_i)
+
+            # author_j.is_quoted_by.append(someone)
+
+    '''
+    for i in range(len(array_of_references)):
+        # we search for article titles and replace spaces 
+        # by underscore symbol for ontology representation      
+        article_text = array_of_references[i]['title']
+        article_text = article_text.replace(' ', '_')
+        article_i = Articles(article_text)
+        for j in range(len(array_of_references[i]['authors'])):
+            author_text = array_of_references[i]['authors'][j]    
+            # replace space by _ for otology representation
+            author_text = author_text.replace(' ', '_')
+            # print(author_text)
+            author_j = Authors(author_text)
+            author_j.wrote_article.append(article_i)
+
+            # 
+            #
+            author_j.is_quoted_by.append(someone)
+    '''
+
+
+
+
     for author in authors:
+
         author_i = Authors(author['name'].replace(' ', '_'))
         lab_i = Authors(author['lab'].replace(' ', '_'))
         # print(lab_i)
@@ -49,8 +92,12 @@ def create_onto(article):
     onto.save(file = ontology_local_link)
     # onto.save()
 
-
-
 article = {'pdf_link': 'http://arxiv.org/pdf/cond-mat/0102536v1', 'authors': [{'name': 'David Prendergast', 'lab': 'Department of Physics'}, {'name': 'M. Nolan', 'lab': 'NMRC, University College, Cork, Ireland'}, {'name': 'Claudia Filippi', 'lab': 'Department of Physics'}, {'name': 'Stephen Fahy', 'lab': 'Department of Physics'}, {'name': 'J. C. Greer', 'lab': 'NMRC, University College, Cork, Ireland'}], 'published': '2001-02-28T20:12:09Z', 'title': 'Impact of Electron-Electron Cusp on Configuration Interaction Energies', 'summary': '  The effect of the electron-electron cusp on the convergence of configuration\ninteraction (CI) wave functions is examined. By analogy with the\npseudopotential approach for electron-ion interactions, an effective\nelectron-electron interaction is developed which closely reproduces the\nscattering of the Coulomb interaction but is smooth and finite at zero\nelectron-electron separation. The exact many-electron wave function for this\nsmooth effective interaction has no cusp at zero electron-electron separation.\nWe perform CI and quantum Monte Carlo calculations for He and Be atoms, both\nwith the Coulomb electron-electron interaction and with the smooth effective\nelectron-electron interaction. We find that convergence of the CI expansion of\nthe wave function for the smooth electron-electron interaction is not\nsignificantly improved compared with that for the divergent Coulomb interaction\nfor energy differences on the order of 1 mHartree. This shows that, contrary to\npopular belief, description of the electron-electron cusp is not a limiting\nfactor, to within chemical accuracy, for CI calculations.\n', 'comment': '11 pages, 6 figures, 3 tables, LaTeX209, submitted to The Journal of\n  Chemical Physics', 'journal_ref': 'J. Chem. Phys. 115, 1626 (2001)'}
-create_onto(article)
+# article_2 = {'pdf_link': 'http://arxiv.org/pdf/cond-mat/0102536v1', 'authors': [{'name': 'David Prendergast 2', 'lab': 'Department of Physics 2'}, {'name': 'M. Nolan 2', 'lab': 'NMRC, University College, Cork, Ireland'}, {'name': 'Claudia Filippi', 'lab': 'Department of Physics'}, {'name': 'Stephen Fahy', 'lab': 'Department of Physics'}, {'name': 'J. C. Greer', 'lab': 'NMRC, University College, Cork, Ireland'}], 'published': '2001-02-28T20:12:09Z', 'title': 'Impact of Electron-Electron Cusp on Configuration Interaction Energies', 'summary': '  The effect of the electron-electron cusp on the convergence of configuration\ninteraction (CI) wave functions is examined. By analogy with the\npseudopotential approach for electron-ion interactions, an effective\nelectron-electron interaction is developed which closely reproduces the\nscattering of the Coulomb interaction but is smooth and finite at zero\nelectron-electron separation. The exact many-electron wave function for this\nsmooth effective interaction has no cusp at zero electron-electron separation.\nWe perform CI and quantum Monte Carlo calculations for He and Be atoms, both\nwith the Coulomb electron-electron interaction and with the smooth effective\nelectron-electron interaction. We find that convergence of the CI expansion of\nthe wave function for the smooth electron-electron interaction is not\nsignificantly improved compared with that for the divergent Coulomb interaction\nfor energy differences on the order of 1 mHartree. This shows that, contrary to\npopular belief, description of the electron-electron cusp is not a limiting\nfactor, to within chemical accuracy, for CI calculations.\n', 'comment': '11 pages, 6 figures, 3 tables, LaTeX209, submitted to The Journal of\n  Chemical Physics', 'journal_ref': 'J. Chem. Phys. 115, 1626 (2001)'}
+
+array_of_references = [{'authors': ['Bakiri, G.'], 'year': '1991', 'title': 'Converting English text to speech: A machine learning approach', 'ref_source': 'Tech.rep. 91-30-2'},
+{'authors': ['Cole, R. A.', 'Barnard, E.'], 'year': '1989', 'title': 'A neural-net training program based on conjugate-gradient optimization', 'ref_source': 'Tech. rep.'}]
+
+create_onto(article, array_of_references)
+
 # translate_article_to_ontology(article)
