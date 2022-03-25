@@ -1,6 +1,7 @@
 # Official doc arxiv: Request from api
 # used to avoid arxiv overcharge
-import time
+# import time
+
 import urllib
 import urllib.request
 
@@ -21,7 +22,7 @@ from pdfminer.high_level import extract_text
 def get_article_data(url):
     # ex of API request
 
-    # url = 'http://export.arxiv.org/api/query?search_query=all:electron&start=0&max_results=2'
+    # url = 'http://export.arxiv.org/api/query?search_query=all:electron&start=0&max_results=15'
 
     data = urllib.request.urlopen(url)
     # print(data.read().decode('utf-8'))
@@ -165,8 +166,9 @@ def get_references_in_text_format_from_link(pdf_url):
             references = text[text.find(reference_word):]
             
             # to exclude the work references itself
+            # return references[12:]
         except Exception:
-            pass
+            references = 'references_'
         
 
         return references[12:]
@@ -179,7 +181,7 @@ def get_references_in_text_format_from_link(pdf_url):
 
 def get_array_of_references_from_string_of_references(references_2):
     array_of_references = []
-
+    # sometimes read quality is bad, if many references are of bad quality, it skips the document
     max_numer_of_trials_to_read_reference = 30
     # j number of trials to read the file
     j = 0
@@ -230,6 +232,20 @@ def get_array_of_references_from_string_of_references(references_2):
         # references_2[ref_title_end:]
         ref_title_end = references_2.find('.', references_2.find('.') + 1)
         ref_title = references_2[ref_title_start+2:ref_title_end].replace('\n', '')
+
+        # TRY TO AVOID BAD CHARACTERS 
+        #
+        #
+        ref_title = ref_title.replace('|', '_')
+        ref_title = ref_title.replace("`", '_')
+        ref_title = ref_title.replace('\\', '_')
+        ref_title = ref_title.replace('"', '_')
+        ref_title = ref_title.replace('{', '_')
+        ref_title = ref_title.replace('}', '_')
+        #
+        #
+        # 
+
         # print(ref_title)
         ref_buffer['title'] = ref_title
         references_2 = references_2[ref_title_end+2:]
@@ -331,7 +347,7 @@ def create_onto_from_one_article(article, array_of_references):
 
 def main():
     # request to arxiv
-    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=3'
+    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=10'
     array_of_articles = get_article_data(url) # request to arxiv
 
     # onto file name
@@ -354,7 +370,7 @@ def main():
         # print(article)
         create_onto_from_one_article(article, array_of_references)
         i += 1
-        print(i)
+        print(i, pdf_url)
         # time.sleep(10)
     
     '''
