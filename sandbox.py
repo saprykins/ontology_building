@@ -111,7 +111,7 @@ def line_of_authors_to_array(line):
     array_of_authors = []
     special_character ="&" # splits authors in references
 
-    # if line.find('&'):
+    # if line.find('&') sometimes the last author is separated with sign symbol:
     if special_character in line:
         # print('1')
         last_author = line[line.find('&')+2:]
@@ -119,15 +119,25 @@ def line_of_authors_to_array(line):
         array_of_authors.append(last_author.strip())
 
     while len(line)>3:
-        # if find = -1, it exists
+        # if find = -1 means that it did not find
         if line.find('.,') != -1:
             # print('2')
             # print('NOK')
+            '''
             author_i = line[:line.find('.,')+1]
             # print(author_i)
+            # if len(author_i)>6 and author_i[0] != ',':
             array_of_authors.append(author_i.strip())
             line = line[line.find('.,')+3:]
-
+            '''
+            author_i = line[:line.find('.,')+1].strip()
+            # print(author_i)
+            # if len(author_i)>8 and author_i[0] != ',':
+            array_of_authors.append(author_i)
+            
+            line = line[line.find('.,')+3:]
+            # if len(line)<8 and line[0] == ',':
+            #     line = ''
         else:
             # print('3')
             # author_i = line_1
@@ -269,7 +279,7 @@ def get_array_of_references_from_string_of_references(references_2):
         ref_title_end = references_2.find('.', references_2.find('.') + 1)
         ref_title = references_2[ref_title_start+2:ref_title_end].replace('\n', '')
 
-        # TRY TO AVOID BAD CHARACTERS 
+        # REMPLACING UNACCEPTABLE FOR XML FORMAT CHARACTERS 
         #
         #
         ref_title = ref_title.replace('|', '_')
@@ -433,7 +443,7 @@ def send_a_pdf_to_api_and_get_text_from_api(file_url):
 
 def main():
     # request to arxiv
-    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=2'
+    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=1000'
     array_of_articles = get_article_data(url) # request to arxiv
 
     # onto file name
