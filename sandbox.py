@@ -8,6 +8,8 @@ import urllib.request
 # Getting key information from xml
 import xml.etree.ElementTree as ET
 
+import requests
+
 # Ontology
 from owlready2 import *
 
@@ -141,7 +143,24 @@ def line_of_authors_to_array(line):
 # 
 
 def get_references_in_text_format_from_link(pdf_url):
+    
+    try:
+        text = send_a_pdf_to_api_and_get_text_from_api(pdf_url)
+        reference_word = 'Reference'
+        references = text[text.find(reference_word):]
+        
+        # to exclude the work references itself
+        # return references[12:]
+    except Exception:
+        references = 'references_'
+    
+
+
+
+
+
     # name of local file
+    '''
     local_file = 'local_copy.pdf'
 
     # Download remote and save locally
@@ -154,7 +173,7 @@ def get_references_in_text_format_from_link(pdf_url):
         print('Let us try to use local_copy.pdf file')
         print('If no result below, upload local_copy.pdf file')
 
-    
+    '''
     # else:
         # try:
             # path_to_pdf = 'local_copy.pdf'
@@ -162,12 +181,19 @@ def get_references_in_text_format_from_link(pdf_url):
             # print(e.__class__, "occurred.")
             # print('File local_copy.pdf not found. Please, upload local_copy.pdf file')
 
-
+    '''
     finally:
         # had an error: a bytes-like object is required, not 'str'
         # so added try
         try:
             text = extract_text(local_file)
+            # 
+            #
+            #
+            # text = send_a_pdf_to_api_and_get_text_from_api(pdf_url)
+            #
+            #
+            #
             reference_word = 'Reference'
             # print(text.find(reference_word))
             # print(text[text.find(reference_word):)
@@ -180,8 +206,8 @@ def get_references_in_text_format_from_link(pdf_url):
         except Exception:
             references = 'references_'
         
-
-        return references[12:]
+    '''
+    return references[12:]
 
 
 
@@ -267,10 +293,7 @@ def get_array_of_references_from_string_of_references(references_2):
 
         # ref_source = references_2[:references_2.find(',')].rstrip('\n')
         ref_source = references_2[:references_2.find(',')].replace('\n', '')
-        '''
-        if ref_source.find('(cid:12)'):
-        ref_source.replace('(cid:12)', 'fi')
-        '''
+        
         references_2 = references_2[references_2.find('.')+3:]
         # print(ref_source)
         ref_buffer['ref_source'] = ref_source
@@ -369,12 +392,48 @@ def create_onto_from_one_article(article, array_of_references):
 
 
 #
+# establishing connection with api
+#
+
+def send_a_pdf_to_api_and_get_text_from_api(file_url):
+    local_file = 'local_copy.pdf'
+    # it's the internal api 
+    # is used to send pdf-file and get document_id
+    post_url = "http://localhost:5000/documents"
+
+    
+    
+    urllib.request.urlretrieve(file_url, local_file)
+    
+    files = {"file": open(local_file, "rb")}
+
+    # send file
+    response = requests.post(post_url, files=files)
+    
+    # api is configured to return documenet_id
+    # get id of the document saved in database
+    document_id = response.json()['id']
+
+    # getting data from api
+    get_url = "http://localhost:5000/text/"+str(document_id)+".txt"
+
+    # the api is configured to return text when document_id is sent
+    response = requests.get(get_url)
+    # print(response.text['text'])
+    text_from_file = response.json()
+
+    return text_from_file['text']
+
+
+
+
+#
 # MAIN
 #
 
 def main():
     # request to arxiv
-    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=5'
+    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=2'
     array_of_articles = get_article_data(url) # request to arxiv
 
     # onto file name
@@ -392,7 +451,12 @@ def main():
     for article in array_of_articles:
         
         pdf_url = article['pdf_link']
+        # references as result
         text = get_references_in_text_format_from_link(pdf_url)
+        
+        # text as result
+        # text = send_a_pdf_to_api_and_get_text_from_api(pdf_url)
+        
         array_of_references = get_array_of_references_from_string_of_references(text)
         # print(article)
         create_onto_from_one_article(article, array_of_references)
