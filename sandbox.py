@@ -21,7 +21,7 @@ from pdfminer.high_level import extract_text
 
 def get_article_data(url):
     # ex of API request
-
+    # url = 'http://export.arxiv.org/api/query?search_query=all:electron&start=0&max_results=1'
     # url = 'http://export.arxiv.org/api/query?search_query=all:electron&start=0&max_results=15'
 
     data = urllib.request.urlopen(url)
@@ -66,13 +66,18 @@ def get_article_data(url):
             # for grand_grand_child in grand_child[::2]:
             author_dict = {}
             for grand_grand_child in grand_child:
+
                 if grand_grand_child.tag == '{http://www.w3.org/2005/Atom}name':
                     writer = grand_grand_child.text
                     author_dict['name'] = writer
-
+                    # print(writer)
+                
+                # some responses provide information on author's lab
                 if grand_grand_child.tag == '{http://arxiv.org/schemas/atom}affiliation':
                     lab_of_writer = grand_grand_child.text
+                    # print(lab_of_writer)
                     author_dict['lab'] = lab_of_writer
+                    # print(lab_of_writer)
                 
             # fill in the list of authors (each author is a dictionary with name and lab of the author)
             if author_dict:
@@ -316,6 +321,8 @@ def create_onto_from_one_article(article, array_of_references):
 
         reference_i = Articles(reference_title)
         article_i.references_article.append(reference_i)
+        
+        
 
         for author_of_reference in reference['authors']:
             author_of_reference = author_of_reference.replace(' ', '_')
@@ -327,13 +334,14 @@ def create_onto_from_one_article(article, array_of_references):
     for author in authors:
 
         author_i = Authors(author['name'].replace(' ', '_'))
+        author_i.published_in.append(journal_i)
+        author_i.wrote_article.append(article_i)
+
         try:
-            lab_i = Institutions(author['lab'].replace(' ', '_'))
-            # print(lab_i)
-            author_i.wrote_article.append(article_i)
+            lab_i = Institutions(author['lab'].replace(' ', '_'))    
+            # print(lab_i)    
             author_i.works_in.append(lab_i)
-            author_i.published_in.append(journal_i)
-            author_i.wrote_article.append(article_i)
+            
         except Exception:
             pass
         
@@ -347,7 +355,7 @@ def create_onto_from_one_article(article, array_of_references):
 
 def main():
     # request to arxiv
-    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=10'
+    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=2'
     array_of_articles = get_article_data(url) # request to arxiv
 
     # onto file name
