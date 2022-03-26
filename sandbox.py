@@ -51,7 +51,8 @@ def get_article_data(url):
                 article_buffer['title'] = grand_child.text
 
             if grand_child.tag == '{http://www.w3.org/2005/Atom}published':
-                article_buffer['published'] = grand_child.text
+                # in order to keep only the year
+                article_buffer['published_on_date'] = grand_child.text[:4]
 
             if grand_child.tag == '{http://www.w3.org/2005/Atom}summary':
                 article_buffer['summary'] = grand_child.text
@@ -60,7 +61,11 @@ def get_article_data(url):
                 article_buffer['comment'] = grand_child.text
             
             if grand_child.tag == '{http://arxiv.org/schemas/atom}journal_ref':
-                article_buffer['journal_ref'] = grand_child.text
+                # we keep only the part related to the name of journal 
+                # and don't keep page numbers
+                journal_name_limiter = grand_child.text.find(')')
+                journal_name = grand_child.text[:journal_name_limiter+1]
+                article_buffer['journal_ref'] = journal_name
             
             # ::2 to avoid printing departments
             # for grand_grand_child in grand_child[::2]:
@@ -247,6 +252,11 @@ def get_array_of_references_from_string_of_references(references_2):
         ref_title = ref_title.replace('"', '_')
         ref_title = ref_title.replace('{', '_')
         ref_title = ref_title.replace('}', '_')
+        ref_title = ref_title.replace('(cid:14)', 'ffi')
+        ref_title = ref_title.replace('(cid:12)', 'fi')
+        ref_title = ref_title.replace('(cid:11)', 'ff')
+        ref_title = ref_title.replace('(cid:13)', 'fl')
+        ref_title = ref_title.replace('(unpublished)', '_')
         #
         #
         # 
@@ -302,23 +312,32 @@ def create_onto_from_one_article(article, array_of_references):
         class references_article(ObjectProperty):
             domain = [Articles]
             range = [Articles]
+        class read_article(ObjectProperty):
+            domain = [Authors]
+            range = [Articles]
+        class published_on_date(DataProperty):
+            range = [str]
 
     # get data from article-dictionary
     authors = article['authors']
     
+    published_on_date = article['published_on_date'].replace(' ', '_')
+
     article_title = article['title'].replace(' ', '_')
     article_i = Articles(article_title)
 
     journal_title = article['journal_ref'].replace(' ', '_')
     journal_i = Journals(journal_title)
+    journal_i.published_on_date.append(published_on_date)
     
 
     for reference in array_of_references:
         # we search for article titles and replace spaces with underscore for better ontology representation
         # by underscore symbol for ontology representation      
         reference_title = reference['title']
+        reference_title = reference_title.replace('  ', '_')
         reference_title = reference_title.replace(' ', '_')
-
+    
         reference_i = Articles(reference_title)
         article_i.references_article.append(reference_i)
         
@@ -355,7 +374,7 @@ def create_onto_from_one_article(article, array_of_references):
 
 def main():
     # request to arxiv
-    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=2'
+    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=5'
     array_of_articles = get_article_data(url) # request to arxiv
 
     # onto file name
