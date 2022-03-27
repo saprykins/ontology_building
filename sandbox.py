@@ -441,9 +441,9 @@ def send_a_pdf_to_api_and_get_text_from_api(file_url):
 # MAIN
 #
 
-def main():
+def main(number_of_articles):
     # request to arxiv
-    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=1000'
+    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=101&max_results='+str(number_of_articles)
     array_of_articles = get_article_data(url) # request to arxiv
 
     # onto file name
@@ -469,7 +469,10 @@ def main():
         
         array_of_references = get_array_of_references_from_string_of_references(text)
         # print(article)
-        create_onto_from_one_article(article, array_of_references)
+        try:
+            create_onto_from_one_article(article, array_of_references)
+        except Exception:
+            pass
         i += 1
         print(i, pdf_url)
         # time.sleep(10)
@@ -494,5 +497,6 @@ def main():
 
 
 
+
 if __name__ == "__main__":
-    main()
+    main(5)
