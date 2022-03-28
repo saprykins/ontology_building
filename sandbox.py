@@ -50,7 +50,8 @@ def get_article_data(url):
                 article_buffer['pdf_link'] = pdf_link
 
             if grand_child.tag == '{http://www.w3.org/2005/Atom}title':
-                article_buffer['title'] = grand_child.text
+                title = grand_child.text.replace('"', '_')
+                article_buffer['title'] = title
 
             if grand_child.tag == '{http://www.w3.org/2005/Atom}published':
                 # in order to keep only the year
@@ -67,7 +68,7 @@ def get_article_data(url):
                 # and don't keep page numbers
                 journal_name_limiter = grand_child.text.find(')')
                 journal_name = grand_child.text[:journal_name_limiter+1]
-                article_buffer['journal_ref'] = journal_name
+                article_buffer['journal_ref'] = journal_name.replace('"', "_")
             
             # ::2 to avoid printing departments
             # for grand_grand_child in grand_child[::2]:
@@ -279,23 +280,7 @@ def get_array_of_references_from_string_of_references(references_2):
         ref_title_end = references_2.find('.', references_2.find('.') + 1)
         ref_title = references_2[ref_title_start+2:ref_title_end].replace('\n', '')
 
-        # REMPLACING UNACCEPTABLE FOR XML FORMAT CHARACTERS 
-        #
-        #
-        ref_title = ref_title.replace('|', '_')
-        ref_title = ref_title.replace("`", '_')
-        ref_title = ref_title.replace('\\', '_')
-        ref_title = ref_title.replace('"', '_')
-        ref_title = ref_title.replace('{', '_')
-        ref_title = ref_title.replace('}', '_')
-        ref_title = ref_title.replace('(cid:14)', 'ffi')
-        ref_title = ref_title.replace('(cid:12)', 'fi')
-        ref_title = ref_title.replace('(cid:11)', 'ff')
-        ref_title = ref_title.replace('(cid:13)', 'fl')
-        ref_title = ref_title.replace('(unpublished)', '_')
-        #
-        #
-        # 
+
 
         # print(ref_title)
         ref_buffer['title'] = ref_title
@@ -436,6 +421,32 @@ def send_a_pdf_to_api_and_get_text_from_api(file_url):
 
 
 
+#
+#
+#
+
+def make_text_xml_friendly(text):
+    # REMPLACING UNACCEPTABLE FOR XML FORMAT CHARACTERS 
+    #
+    #
+    text = text.replace('|', '_')
+    text = text.replace("`", '_')
+    text = text.replace('\\', '_')
+    text = text.replace('"', '_')
+    text = text.replace('{', '_')
+    text = text.replace('}', '_')
+    text = text.replace('(cid:14)', 'ffi')
+    text = text.replace('(cid:12)', 'fi')
+    text = text.replace('(cid:11)', 'ff')
+    text = text.replace('(cid:13)', 'fl')
+    text = text.replace('(unpublished)', '_')
+    text = text.replace('#', '_')
+    text = text.replace('“', '_')
+    #
+    #
+    # 
+    return text
+
 
 #
 # MAIN
@@ -443,7 +454,7 @@ def send_a_pdf_to_api_and_get_text_from_api(file_url):
 
 def main(number_of_articles):
     # request to arxiv
-    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=101&max_results='+str(number_of_articles)
+    url = 'http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results='+str(number_of_articles)
     array_of_articles = get_article_data(url) # request to arxiv
 
     # onto file name
@@ -464,6 +475,8 @@ def main(number_of_articles):
         # references as result
         text = get_references_in_text_format_from_link(pdf_url)
         
+        text = make_text_xml_friendly(text)
+
         # text as result
         # text = send_a_pdf_to_api_and_get_text_from_api(pdf_url)
         
@@ -499,4 +512,4 @@ def main(number_of_articles):
 
 
 if __name__ == "__main__":
-    main(5)
+    main(20)
