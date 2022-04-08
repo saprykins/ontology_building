@@ -2,8 +2,8 @@
 
 
 ## Application structure - 2 Applications  
-1/ (API_reading_pdf)[https://github.com/saprykins/API_reading_pdf]
-2/ (ontology_building)[https://github.com/saprykins/ontology_building]  
+1/ [API_reading_pdf](https://github.com/saprykins/API_reading_pdf)
+2/ [ontology_building](https://github.com/saprykins/ontology_building)  
 
 
 # STEPS  
