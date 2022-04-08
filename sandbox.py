@@ -1,6 +1,5 @@
 # Official doc arxiv: Request from api
 # used to avoid arxiv overcharge
-# import time
 
 import urllib
 import urllib.request
@@ -23,8 +22,6 @@ from pdfminer.high_level import extract_text
 
 def get_article_data(url):
     # ex of API request
-    # url = 'http://export.arxiv.org/api/query?search_query=all:electron&start=0&max_results=1'
-    # url = 'http://export.arxiv.org/api/query?search_query=all:electron&start=0&max_results=15'
 
     data = urllib.request.urlopen(url)
     # print(data.read().decode('utf-8'))
@@ -122,26 +119,11 @@ def line_of_authors_to_array(line):
     while len(line)>3:
         # if find = -1 means that it did not find
         if line.find('.,') != -1:
-            # print('2')
-            # print('NOK')
-            '''
-            author_i = line[:line.find('.,')+1]
-            # print(author_i)
-            # if len(author_i)>6 and author_i[0] != ',':
-            array_of_authors.append(author_i.strip())
-            line = line[line.find('.,')+3:]
-            '''
             author_i = line[:line.find('.,')+1].strip()
-            # print(author_i)
-            # if len(author_i)>8 and author_i[0] != ',':
-            array_of_authors.append(author_i)
-            
+            array_of_authors.append(author_i)            
             line = line[line.find('.,')+3:]
-            # if len(line)<8 and line[0] == ',':
-            #     line = ''
+
         else:
-            # print('3')
-            # author_i = line_1
             array_of_authors.append(line.strip())
             line = ''
 
@@ -159,65 +141,10 @@ def get_references_in_text_format_from_link(pdf_url):
         text = send_a_pdf_to_api_and_get_text_from_api(pdf_url)
         reference_word = 'Reference'
         references = text[text.find(reference_word):]
-        
-        # to exclude the work references itself
-        # return references[12:]
+
     except Exception:
         references = 'references_'
     
-
-
-
-
-
-    # name of local file
-    '''
-    local_file = 'local_copy.pdf'
-
-    # Download remote and save locally
-
-    try:
-        urllib.request.urlretrieve(pdf_url, local_file)
-    except Exception as e:
-        print('Site arxiv does not provide access to pdf files')
-        print(e.__class__, "occurred.")
-        print('Let us try to use local_copy.pdf file')
-        print('If no result below, upload local_copy.pdf file')
-
-    '''
-    # else:
-        # try:
-            # path_to_pdf = 'local_copy.pdf'
-        # except Exception as e:
-            # print(e.__class__, "occurred.")
-            # print('File local_copy.pdf not found. Please, upload local_copy.pdf file')
-
-    '''
-    finally:
-        # had an error: a bytes-like object is required, not 'str'
-        # so added try
-        try:
-            text = extract_text(local_file)
-            # 
-            #
-            #
-            # text = send_a_pdf_to_api_and_get_text_from_api(pdf_url)
-            #
-            #
-            #
-            reference_word = 'Reference'
-            # print(text.find(reference_word))
-            # print(text[text.find(reference_word):)
-
-            # get text of all references
-            references = text[text.find(reference_word):]
-            
-            # to exclude the work references itself
-            # return references[12:]
-        except Exception:
-            references = 'references_'
-        
-    '''
     return references[12:]
 
 
@@ -488,28 +415,9 @@ def main(number_of_articles):
             pass
         i += 1
         print(i, pdf_url)
-        # time.sleep(10)
     
-    '''
-    for article in array_of_articles:
-        try:
-            # go through articles and get its links
-            # CREATE FNC THAT PUT ALL IN ONTO! 
-            pdf_url = article['pdf_link']
-            # extract text, specifically references in form of text
-            text = get_references_in_text_format_from_link(pdf_url)
-            array_of_references = get_array_of_references_from_string_of_references(text)
-
-            for i in range(len(array_of_references)):
-                print(array_of_references[i])
-            
-        except Exception as e:
-            print(e.__class__, "occurred.")
-    '''
-
-
 
 
 
 if __name__ == "__main__":
-    main(20)
+    main(101)
