@@ -2,15 +2,16 @@
 
 
 ## Application structure - 2 Applications  
-1/ [API_reading_pdf](https://github.com/saprykins/API_reading_pdf)
+1/ [API_reading_pdf](https://github.com/saprykins/API_reading_pdf)  
 2/ [ontology_building](https://github.com/saprykins/ontology_building)  
 
 
-# STEPS  
+# Short description of steps  
 1/ LAUNCH API_reading_pdf  
 2/ LAUNCH ontology_building  
 
 
+# Detailed description  
 # INSTALLATION (UBUNTU OS)
 
 The application requires Python installed.  
