@@ -1,17 +1,43 @@
-# APPLICATION TO BUILD ONTOLOGY
+# APPLICATION TO CREATE ONTOLOGY FROM ArXiv ARTICLES  
 
 
-## Application structure - 2 Applications  
-1/ [API_reading_pdf](https://github.com/saprykins/API_reading_pdf)  
-2/ [ontology_building](https://github.com/saprykins/ontology_building)  
+# OVERVIEW
+The application consists of two parts: 
+1/ API that receives and saves pdf file, extracts and saves its text and meta-data in local database.  
+The API also allows to retrieve text and meta-data of a pdf-file previously uploaded via its id.  
+2/ Main controller that sends requests to previously mentioned API and creates ontology.  
+No authentication required
 
 
-# Short description of steps  
-1/ LAUNCH API_reading_pdf  
-2/ LAUNCH ontology_building  
+# MORE DETAILS
+
+## What it can 
+It can receive and analyse 'PDF' and 'pdf' files. Other files are rejected.  
+In case user starts to request empty database, the user receives an error message.  
+In case user requests unsupported id like character or a digit which is not in database range, the user receives an error message. 
 
 
-# Detailed description  
+## Application structure  
+
+```
+API_reading_pdf/  
+├── flaskr  
+│   ├── init.py  
+│   ├── controller.py  
+│   └── model.py  
+├── tests  
+│   └── test_**.py   (files contain code to test the app)  
+├── uploads          (pdf-files storage, created automatically after app launch)  
+├── venv             (virtual environment folder)  
+├── main.py          (controller that sends requests to API)  
+├── pdf.db           (database file, created automatically after app launch)  
+├── readme.md  
+├── requirements.txt (list of required libs and packages)  
+├── sample.pdf       (pdf file for tests)  
+└── wsgi.py          (application entry point)  
+```
+
+
 # INSTALLATION (UBUNTU OS)
 
 The application requires Python installed.  
@@ -19,7 +45,7 @@ The application requires Python installed.
  * For more details about Python installation, check the following link:  
  https://www.python.org/downloads/  
 
-In folder "API_reading_pdf" create vitual environment  
+In folder "Ontology_building" create vitual environment  
 
 * You can create it from command line:  
   ```
@@ -71,9 +97,25 @@ The application runs while the command line window is open.
 
   You should see text "Index page" in your browser
 
-## Upload a pdf-file  
 
-Open a new terminal window, to let your application run in previous terminal window  
+## Transefer articles from ArXiv to API and Create ontology file  
+
+Open a new terminal window, to let your server run in previous terminal window  
+
+Launch the controller in new terminal window by the command:  
+```
+python main.py
+```
+By default, only two articles will be sent. The parameter can be modified.    
+
+The progress is displayed in the following way
+______
+N link
+1 http://arxiv.org/pdf/cs/9308101v1  
+2 http://arxiv.org/pdf/cs/9308102v1  
+------
+
+
 
 To upload a pdf-file "sample.pdf" using command line, you can use curl-command  
 
