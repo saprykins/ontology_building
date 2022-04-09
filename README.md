@@ -2,10 +2,14 @@
 
 
 # OVERVIEW
+
 The application consists of two parts:  
+
 1/ API that receives and saves pdf file, extracts and saves its text and meta-data in local database.  
 The API also allows to retrieve text and meta-data of a pdf-file previously uploaded via its id.  
+
 2/ Main controller that sends requests to previously mentioned API and creates ontology.  
+
 No authentication required  
 
 
