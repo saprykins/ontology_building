@@ -88,7 +88,7 @@ pip install -r requirements.txt
 
 # TUTORIAL
 
-## Run the application  
+## Run the server  
 
 To run the application after installation, stay in folder "ontology_building" and type the following in command line:  
 ```
