@@ -223,7 +223,7 @@ Type in address line http://localhost:5000/text/<document_id>.txt
 
 ## Stop the application
 
-The controller finishes its work and exits the application.  
+The controller finishes its work and stop automatically.  
 
 API server should be shut down manually.  
 
