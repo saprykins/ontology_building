@@ -115,12 +115,14 @@ By default, only a few articles will be sent. The parameter can be modified.
 
 The progress is displayed in the following way  
 ```
-N link  
+Id link  
 1 http://arxiv.org/pdf/cs/9308101v1  
 2 http://arxiv.org/pdf/cs/9308102v1  
 3 http://arxiv.org/pdf/cs/9309101v1
 ```
-where N-column is the order of article, link-column is the link that was transfered to API.  
+where  
+* Id-column is the order of article and its id in relational database  
+* link-column is the link that was transfered to API  
 
 File with ontology "onto_output.owl" was created.  
 
