@@ -111,7 +111,7 @@ Launch the controller in new terminal window by the command:
 ```
 python main.py
 ```
-By default, only two articles will be sent. The parameter can be modified.    
+By default, only a few articles will be sent. The parameter can be modified.    
 
 The progress is displayed in the following way  
 ```
