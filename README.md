@@ -2,11 +2,11 @@
 
 
 # OVERVIEW
-The application consists of two parts: 
+The application consists of two parts:  
 1/ API that receives and saves pdf file, extracts and saves its text and meta-data in local database.  
 The API also allows to retrieve text and meta-data of a pdf-file previously uploaded via its id.  
 2/ Main controller that sends requests to previously mentioned API and creates ontology.  
-No authentication required
+No authentication required  
 
 
 # MORE DETAILS
@@ -30,6 +30,8 @@ API_reading_pdf/
 ├── uploads          (pdf-files storage, created automatically after app launch)  
 ├── venv             (virtual environment folder)  
 ├── main.py          (controller that sends requests to API)  
+├── onto_output.owl  (ontology file that will be created by the main.py)  
+├── ontology.owl     (ontology file generated previously by the application)  
 ├── pdf.db           (database file, created automatically after app launch)  
 ├── readme.md  
 ├── requirements.txt (list of required libs and packages)  
@@ -108,30 +110,42 @@ python main.py
 ```
 By default, only two articles will be sent. The parameter can be modified.    
 
-The progress is displayed in the following way
-______
-N link
+The progress is displayed in the following way  
+```
+N link  
 1 http://arxiv.org/pdf/cs/9308101v1  
 2 http://arxiv.org/pdf/cs/9308102v1  
-------
+3 http://arxiv.org/pdf/cs/9309101v1
+```
+where N-column is the order of article, link-column is the link that was transfered to API.  
+
+File with ontology "onto_output.owl" was created.  
 
 
+## What has happened  
 
-To upload a pdf-file "sample.pdf" using command line, you can use curl-command  
+1/ From each article metadata and text were extracted and saved to local relational database file "pdf.db".  
 
-* In case curl tool is not installed you can do this in command line:  
+The database can be accessed in several ways:  
+
+* using applications such as DBeaver or others  
+
+* with curl command (the detailed description is in "Working with database" paragraph)
+
+2/ The extracted text is transferred to main.py, enriched with data from ArXiv API and saved to ontology file.  
+
+
+# Working with database  
+
+## Pre-requirements
+
+The method descibed below uses curl tool.  
+
+* In case curl tool is not installed you can install it from command line:  
   ```
   sudo apt install curl   
   ```
 
-In terminal, go to the folder where the file you want to send is located.  
-
-You can find a sample.pdf file in "flask_reading_pdf" folder.  
-
-To send sample.pdf file to application, type:  
-```
-curl -sF file=@"sample.pdf" http://localhost:5000/documents
-```
 * Standard response returns in the following format:  
   ```
   {
@@ -147,7 +161,7 @@ curl -sF file=@"sample.pdf" http://localhost:5000/documents
 
 ## Get metadata  
 
-To retrive metadata about a file, you need its id (which is document_id) that you got from on the previous step.  
+To retrive metadata about a file, you need its id. It was mentioned near link during transfert process.  
 ```
 curl -s http://localhost:5000/documents/<document_id>
 ```
@@ -216,40 +230,8 @@ Type in address line http://localhost:5000/text/<document_id>.txt
 
 ## Stop the application
 
+The controller finishes its work and exits the application.  
+
+API server should be shut down manually.  
+
 To stop the application, type "ctr + C" in terminal window where it was launched or close the terminal window.  
-
-
-## Test the application
-
-To launch tests, go to the project's top-level directory "API_reading_pdf"  
-and launch the following commands
-Tests cover 97-98% of code    
-```
-export PYTHONPATH="venv/lib/python3.9/site-packages/"
-```
-```
-coverage run -m pytest
-```
-```
-coverage report
-```
-For more details, you can check what are the line numbers that were not covered in tests
-```
-coverage report -m
-```
-To create a detailed html report in "API_reading_pdf/htmlcov/index.html", type the following
-```
-coverage html
-```
-
-## Check code quality with Pylint
-
-To check if the style of code in files is pythonic you can use Pylint.  
-To do that stay in top-level directory "API_reading_pdf" and type
-```
-pylint ./flaskr
-```
-You can also check each file using  
-```
-pylint model.py
-```
