@@ -20,7 +20,7 @@ In case user requests unsupported id like character or a digit which is not in d
 ## Application structure  
 
 ```
-Ontology_building/  
+ontology_building/  
 ├── flaskr  
 │   ├── init.py  
 │   ├── controller.py  
@@ -31,7 +31,6 @@ Ontology_building/
 ├── venv             (virtual environment folder)  
 ├── main.py          (controller that sends requests to API)  
 ├── onto_output.owl  (ontology file that will be created by the main.py)  
-├── ontology.owl     (ontology file generated previously by the application)  
 ├── pdf.db           (database file, created automatically after app launch)  
 ├── readme.md  
 ├── requirements.txt (list of required libs and packages)  
@@ -87,7 +86,7 @@ pip install -r requirements.txt
 
 ## Run the application  
 
-To run the application after installation, stay in folder "flask_reading_pdf" and type the following in command line:  
+To run the application after installation, stay in folder "ontology_building" and type the following in command line:  
 ```
 python wsgi.py
 ```
