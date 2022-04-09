@@ -145,23 +145,11 @@ The method descibed below uses curl tool.
   ```
   sudo apt install curl   
   ```
-
-* Standard response returns in the following format:  
-  ```
-  {
-      "id": 1
-  }
-  ```
-  where 1 is id number of the record in database.  
-
-* At this moment the pdf-file is saved in 'API_reading_pdf-develop/uploads' on your local machine, text and metadata are saved in local sqlite database.  
-
-* You should use this id to retrieve the information about the file.  
-
+  
 
 ## Get metadata  
 
-To retrive metadata about a file, you need its id. It was mentioned near link during transfert process.  
+To retrive metadata about a file, you need its id. It was mentioned with link during transfert process.  
 ```
 curl -s http://localhost:5000/documents/<document_id>
 ```
