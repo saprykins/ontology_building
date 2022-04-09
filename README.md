@@ -20,7 +20,7 @@ In case user requests unsupported id like character or a digit which is not in d
 ## Application structure  
 
 ```
-API_reading_pdf/  
+Ontology_building/  
 ├── flaskr  
 │   ├── init.py  
 │   ├── controller.py  
